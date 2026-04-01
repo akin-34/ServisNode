@@ -1,21 +1,15 @@
-# ServisNode: Kurumsal Destek ve Varlık Yönetim Sistemi
+# 🛡 ServisNode — Next-Gen Kurumsal Destek ve Varlık Yönetim Sistemi
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT) 
+[![Next.js](https://img.shields.io/badge/Frontend-Next.js%2014-black)](https://nextjs.org/) 
+[![PostgreSQL](https://img.shields.io/badge/Database-PostgreSQL-336791)](https://www.postgresql.org/) 
+[![Prisma](https://img.shields.io/badge/ORM-Prisma-2D3748)](https://www.prisma.io/)
 
 ServisNode, modern işletmelerin operasyonel ihtiyaçlarını merkezi bir platformdan yönetmek için tasarlanmış, yüksek performanslı ve ölçeklenebilir bir **Ticket & Asset Management** çözümüdür. Teknik destek süreçlerini otomatize ederken, envanter takibi ve kullanıcı yönetimi gibi kritik süreçleri tek bir merkezde birleştirir.
 
-## 🛠 Teknik Mimari ve Teknoloji Yığını
-
-Bu proje, modern web ekosisteminin en güncel ve kararlı kütüphaneleri kullanılarak inşa edilmiştir:
-
-- **Frontend**: [Next.js 14+](https://nextjs.org/) (App Router ile SSR ve Streaming desteği)
-- **Arayüz Tasarımı**: [TailwindCSS](https://tailwindcss.com/) & [Shadcn UI](https://ui.shadcn.com/) (Hızlı, modern ve responsive tasarım)
-- **State Management**: [TanStack Query](https://tanstack.com/query/latest) (Sunucu durumu yönetimi) & [Zustand](https://docs.pmnd.rs/zustand/getting-started/introduction) (İstemci tarafı durum yönetimi)
-- **Veritabanı Katmanı**: [Prisma ORM](https://www.prisma.io/) ile [PostgreSQL](https://www.postgresql.org/)
-- **Kimlik Doğrulama**: [NextAuth.js](https://next-auth.js.org/) (JWT tabanlı güvenli oturum yönetimi)
-- **İkon Seti**: [Lucide React](https://lucide.dev/)
-
 ---
 
-## 📸 Ekran Görüntüleri ve Modül Analizi
+## 📸 Modül Analizi
 
 ### 1. Operasyonel Kontrol Merkezi (Dashboard)
 Sistemin kalbi olan bu ekran, ekiplerin o anki iş yükünü, açık talepleri ve kritik uyarıları anlık olarak görmesini sağlar. Dinamik grafikler ile performans metrikleri (KPI) takip edilebilir.
@@ -63,6 +57,19 @@ Projenin geliştirme ortamında çalıştırılması için aşağıdaki adımlar
    ```bash
    npm run dev
    ```
+
+---
+
+## 🛠 Teknik Mimari ve Teknoloji Yığını
+
+Bu proje, modern web ekosisteminin en güncel ve kararlı kütüphaneleri kullanılarak inşa edilmiştir:
+
+- **Frontend**: [Next.js 14+](https://nextjs.org/) (App Router ile SSR ve Streaming desteği)
+- **Arayüz Tasarımı**: [TailwindCSS](https://tailwindcss.com/) & [Shadcn UI](https://ui.shadcn.com/) (Hızlı, modern ve responsive tasarım)
+- **State Management**: [TanStack Query](https://tanstack.com/query/latest) (Sunucu durumu yönetimi) & [Zustand](https://docs.pmnd.rs/zustand/getting-started/introduction) (İstemci tarafı durum yönetimi)
+- **Veritabanı Katmanı**: [Prisma ORM](https://www.prisma.io/) ile [PostgreSQL](https://www.postgresql.org/)
+- **Kimlik Doğrulama**: [NextAuth.js](https://next-auth.js.org/) (JWT tabanlı güvenli oturum yönetimi)
+- **İkon Seti**: [Lucide React](https://lucide.dev/)
 
 ---
 

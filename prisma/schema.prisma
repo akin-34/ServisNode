@@ -1,3 +1,6 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -8,18 +11,18 @@ datasource db {
 }
 
 model Account {
-  id                String  @id @default(cuid())
-  userId            String
-  type              String
-  provider          String
-  providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String? @db.Text
-  session_state     String?
+  id                 String  @id @default(cuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?  @db.Text
+  access_token       String?  @db.Text
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?  @db.Text
+  session_state      String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -40,36 +43,38 @@ model User {
   email         String?   @unique
   emailVerified DateTime?
   image         String?
-  role          Role      @default(USER)
+  role          UserRole  @default(USER)
   accounts      Account[]
   sessions      Session[]
-  tickets       Ticket[]  @relation("CreatedTickets")
-  assignedTickets Ticket[] @relation("AssignedTickets")
+  tickets       Ticket[]  @relation("CreatedBy")
+  assigned      Ticket[]  @relation("AssignedTo")
 }
 
-enum Role {
-  USER
-  TECHNICIAN
+enum UserRole {
   ADMIN
+  TECHNICIAN
+  USER
 }
 
 model Ticket {
   id          String   @id @default(cuid())
   title       String
-  description String?
+  description String?  @db.Text
   status      Status   @default(OPEN)
   priority    Priority @default(MEDIUM)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   
   createdById String
-  createdBy   User     @relation("CreatedTickets", fields: [createdById], references: [id])
+  createdBy   User     @relation("CreatedBy", fields: [createdById], references: [id])
   
   assignedToId String?
-  assignedTo   User?    @relation("AssignedTickets", fields: [assignedToId], references: [id])
+  assignedTo   User?     @relation("AssignedTo", fields: [assignedToId], references: [id])
 
-  assetId      String?
-  asset        Asset?   @relation(fields: [assetId], references: [id])
+  assetId     String?
+  asset       Asset?    @relation(fields: [assetId], references: [id])
+
+  comments    Comment[]
 }
 
 enum Status {
@@ -89,24 +94,27 @@ enum Priority {
 model Asset {
   id          String   @id @default(cuid())
   name        String
+  category    String
   serialNumber String  @unique
-  type        AssetType
+  location    String?
+  purchaseDate DateTime?
+  warrantyDate DateTime?
   status      AssetStatus @default(ACTIVE)
+  
   tickets     Ticket[]
-}
-
-enum AssetType {
-  LAPTOP
-  MONITOR
-  MOBILE
-  NETWORK_DEVICE
-  KEYBOARD
-  OTHER
 }
 
 enum AssetStatus {
   ACTIVE
   IN_REPAIR
   RETIRED
-  LOST
+  MISSING
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  ticketId  String
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
 }
