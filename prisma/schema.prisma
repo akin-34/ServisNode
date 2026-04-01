@@ -1,0 +1,112 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  role          Role      @default(USER)
+  accounts      Account[]
+  sessions      Session[]
+  tickets       Ticket[]  @relation("CreatedTickets")
+  assignedTickets Ticket[] @relation("AssignedTickets")
+}
+
+enum Role {
+  USER
+  TECHNICIAN
+  ADMIN
+}
+
+model Ticket {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  status      Status   @default(OPEN)
+  priority    Priority @default(MEDIUM)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  createdById String
+  createdBy   User     @relation("CreatedTickets", fields: [createdById], references: [id])
+  
+  assignedToId String?
+  assignedTo   User?    @relation("AssignedTickets", fields: [assignedToId], references: [id])
+
+  assetId      String?
+  asset        Asset?   @relation(fields: [assetId], references: [id])
+}
+
+enum Status {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+model Asset {
+  id          String   @id @default(cuid())
+  name        String
+  serialNumber String  @unique
+  type        AssetType
+  status      AssetStatus @default(ACTIVE)
+  tickets     Ticket[]
+}
+
+enum AssetType {
+  LAPTOP
+  MONITOR
+  MOBILE
+  NETWORK_DEVICE
+  KEYBOARD
+  OTHER
+}
+
+enum AssetStatus {
+  ACTIVE
+  IN_REPAIR
+  RETIRED
+  LOST
+}
