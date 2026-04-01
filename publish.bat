@@ -32,7 +32,7 @@ echo [INFO] Dosyalar hazirlaniyor...
 git add .
 
 set /p commit_msg="Commit mesaji girin (Bos birakirsaniz varsayilan kullanilir): "
-if "%commit_msg%"=="" set commit_msg="Initial commit - ServisNode Project Foundation"
+if "%commit_msg%"=="" set commit_msg=Initial commit - ServisNode Project Foundation
 
 echo [INFO] Commit islemi yapiliyor...
 git commit -m "%commit_msg%"
