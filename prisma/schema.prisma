@@ -1,5 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// This is your Prisma schema file for ServisNode Enterprise
+// It includes advanced models for organizations, ticket tracking, auditing, and asset life-cycles.
 
 generator client {
   provider = "prisma-client-js"
@@ -10,18 +10,20 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// --- AUTHENTICATION MODELS ---
+
 model Account {
   id                 String  @id @default(cuid())
   userId             String
   type               String
   provider           String
   providerAccountId  String
-  refresh_token      String?  @db.Text
-  access_token       String?  @db.Text
+  refresh_token      String? @db.Text
+  access_token       String? @db.Text
   expires_at         Int?
   token_type         String?
   scope              String?
-  id_token           String?  @db.Text
+  id_token           String? @db.Text
   session_state      String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -43,28 +45,109 @@ model User {
   email         String?   @unique
   emailVerified DateTime?
   image         String?
+  password      String?
   role          UserRole  @default(USER)
+  status        UserStatus @default(ACTIVE)
+
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id])
+
   accounts      Account[]
   sessions      Session[]
-  tickets       Ticket[]  @relation("CreatedBy")
-  assigned      Ticket[]  @relation("AssignedTo")
+  
+  // Relations for Ticket System
+  createdTickets  Ticket[] @relation("CreatedBy")
+  assignedTickets Ticket[] @relation("AssignedTo")
+  comments        Comment[]
+  auditLogs       AuditLog[]
+  
+  // Relations for Asset System
+  ownedAssets     Asset[] @relation("AssetOwner")
+  managedAssets   Asset[] @relation("AssetManager")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 enum UserRole {
+  SUPER_ADMIN
   ADMIN
   TECHNICIAN
+  MANAGER
   USER
+  GUEST
 }
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  PENDING
+}
+
+// --- ORGANIZATIONAL MODELS ---
+
+model Organization {
+  id          String   @id @default(cuid())
+  name        String
+  domain      String?  @unique
+  logo        String?
+  address     String?
+  users       User[]
+  locations   Location[]
+  departments Department[]
+  assets      Asset[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Location {
+  id             String       @id @default(cuid())
+  name           String
+  address        String?
+  city           String?
+  country        String?
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  assets         Asset[]
+  departments    Department[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Department {
+  id             String       @id @default(cuid())
+  name           String
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  locationId     String?
+  location       Location?    @relation(fields: [locationId], references: [id])
+  users          User[]
+  assets         Asset[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// --- TICKET MANAGEMENT MODELS ---
 
 model Ticket {
   id          String   @id @default(cuid())
+  ticketId    String   @unique // Professional ID like SR-10234
   title       String
   description String?  @db.Text
-  status      Status   @default(OPEN)
-  priority    Priority @default(MEDIUM)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  status      TicketStatus @default(OPEN)
+  priority    TicketPriority @default(MEDIUM)
+  type        TicketType @default(INCIDENT)
   
+  // Dynamic Fields (JSON)
+  metadata    Json? 
+
   createdById String
   createdBy   User     @relation("CreatedBy", fields: [createdById], references: [id])
   
@@ -74,47 +157,161 @@ model Ticket {
   assetId     String?
   asset       Asset?    @relation(fields: [assetId], references: [id])
 
+  tags        Tag[]
   comments    Comment[]
+  history     TicketHistory[]
+  attachments Attachment[]
+
+  dueDate     DateTime?
+  resolvedAt  DateTime?
+  closedAt    DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
-enum Status {
+enum TicketStatus {
   OPEN
+  NEW
   IN_PROGRESS
+  PENDING
   RESOLVED
   CLOSED
+  CANCELLED
+  DUPLICATE
 }
 
-enum Priority {
+enum TicketPriority {
   LOW
   MEDIUM
   HIGH
   URGENT
+  CRITICAL
 }
 
-model Asset {
-  id          String   @id @default(cuid())
-  name        String
-  category    String
-  serialNumber String  @unique
-  location    String?
-  purchaseDate DateTime?
-  warrantyDate DateTime?
-  status      AssetStatus @default(ACTIVE)
-  
-  tickets     Ticket[]
+enum TicketType {
+  INCIDENT
+  REQUEST
+  PROBLEM
+  CHANGE
+  QUESTION
 }
 
-enum AssetStatus {
-  ACTIVE
-  IN_REPAIR
-  RETIRED
-  MISSING
+model TicketHistory {
+  id        String   @id @default(cuid())
+  ticketId  String
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  field     String
+  oldValue  String? @db.Text
+  newValue  String? @db.Text
+  changedBy String
+  createdAt DateTime @default(now())
 }
 
 model Comment {
   id        String   @id @default(cuid())
   content   String   @db.Text
-  createdAt DateTime @default(now())
+  isInternal Boolean @default(false)
   ticketId  String
   ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// --- ASSET MANAGEMENT MODELS ---
+
+model Asset {
+  id           String   @id @default(cuid())
+  assetTag     String   @unique // Serial, Barcode, etc.
+  name         String
+  model        String?
+  brand        String?
+  category     String
+  specifications Json?
+
+  status       AssetStatus @default(ACTIVE)
+  condition    AssetCondition @default(NEW)
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  locationId   String?
+  location     Location?    @relation(fields: [locationId], references: [id])
+
+  departmentId String?
+  department   Department?  @relation(fields: [departmentId], references: [id])
+
+  ownerId      String?
+  owner        User?        @relation("AssetOwner", fields: [ownerId], references: [id])
+
+  managerId    String?
+  manager      User?        @relation("AssetManager", fields: [managerId], references: [id])
+
+  purchaseDate DateTime?
+  purchaseCost Float?
+  warrantyExpires DateTime?
+  
+  tickets      Ticket[]
+  attachments  Attachment[]
+  auditLogs    AuditLog[]
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+enum AssetStatus {
+  ACTIVE
+  IN_STORAGE
+  OUT_FOR_REPAIR
+  BROKEN
+  RETIRED
+  DISPOSED
+  STOLEN
+}
+
+enum AssetCondition {
+  NEW
+  EXCELLENT
+  GOOD
+  FAIR
+  POOR
+  SCRAP
+}
+
+// --- SHARED UTILITY MODELS ---
+
+model Attachment {
+  id        String   @id @default(cuid())
+  name      String
+  url       String
+  fileType  String
+  size      Int
+  
+  ticketId  String?
+  ticket    Ticket?  @relation(fields: [ticketId], references: [id])
+  
+  assetId   String?
+  asset     Asset?   @relation(fields: [assetId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+model Tag {
+  id      String   @id @default(cuid())
+  name    String   @unique
+  color   String?
+  tickets Ticket[]
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  action    String
+  entity    String
+  entityId  String
+  details   Json?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  ipAddress String?
+  createdAt DateTime @default(now())
 }
